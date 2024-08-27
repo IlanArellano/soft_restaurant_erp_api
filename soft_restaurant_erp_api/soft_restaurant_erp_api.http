@@ -1,0 +1,6 @@
+@soft_restaurant_erp_api_HostAddress = http://localhost:5281
+
+GET {{soft_restaurant_erp_api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
