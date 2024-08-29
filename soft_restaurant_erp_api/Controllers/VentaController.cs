@@ -17,10 +17,15 @@ namespace soft_restaurant_erp_api.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<List<Venta>> ProcessVenta([FromBody] VentaBody body)
         {
             return logic.Test(body);
+        }
+
+        [HttpGet]
+        public async Task<bool> Test(string id)
+        {
+            return true;
         }
     }
 }
