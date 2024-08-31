@@ -23,7 +23,7 @@ namespace soft_restaurant_erp_api.Controllers
         }
 
         [HttpGet]
-        public async Task<bool> Test(string id)
+        public async Task<bool> Test()
         {
             return true;
         }
