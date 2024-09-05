@@ -48,7 +48,7 @@ namespace ADO.Logic
                         docstatus = 1,
                         doctype = "Sales Invoice Payment",
                         idx = i + 1,
-                        mode_of_payment = pago.FormaPago,
+                        mode_of_payment = "Efectivo", //pago.FormaPago,
                         parentfield = "payments",
                         parenttype = "Sales Invoice"
                     });
