@@ -33,6 +33,8 @@ builder.Services.AddSingleton<RewindMiddleware>();
 var app = builder.Build();
 
 //Response Middlewares
+app.UseMiddleware<RequestLoggingMiddleware>();
+app.UseMiddleware<ResponseLoggingMiddleware>();
 app.UseMiddleware<RewindMiddleware>();
 app.UseMiddleware<ResponseMiddleware>();
 
