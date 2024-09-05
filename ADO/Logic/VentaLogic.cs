@@ -7,8 +7,8 @@ namespace ADO.Logic
 {
     public class VentaLogic
     {
-        private static readonly string DEFAULT_SALES_COMPANY = "FiveAliance";
-        private static readonly string DEFAULT_SALES_CUSTOMER = "ventasmitclan";
+        private static readonly string DEFAULT_SALES_COMPANY = "ALIANZANACIONALMULTIMARCA";
+        private static readonly string DEFAULT_SALES_CUSTOMER = "VentasM9";
         private static ERPInvoice ToERPInvoice(VentaBody body)
         {
             string[] dateInfo = body.Ventas.Count > 0 ? body.Ventas[0].FechaVenta.Split('T', StringSplitOptions.TrimEntries) : ["2024-08-31", "13:00:49.276331"];
@@ -41,7 +41,7 @@ namespace ADO.Logic
                     Pago pago = venta.Pagos.ElementAt(i);
                     data.payments.Add(new ERPInvoicePayment()
                     {
-                        account = "CAJA PRINCIPAL - FA",
+                        account = "CAJA PRINCIPAL - ANM",
                         amount = pago.Importe,
                         base_amount = pago.Importe,
                         @default = 1,
