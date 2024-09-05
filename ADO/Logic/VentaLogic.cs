@@ -21,7 +21,7 @@ namespace ADO.Logic
                 posting_time = string.Concat(dateInfo[1].Where(c => !char.IsWhiteSpace(c))),
                 is_pos = 1,
                 pos_profile = "Mitclan",
-                set_warehouse = "Productos terminados - FA",
+                set_warehouse = "Productos M9 - ANM",
                 update_stock = 1
             };
 
