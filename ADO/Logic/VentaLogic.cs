@@ -31,7 +31,7 @@ namespace ADO.Logic
                 {
                     data.items.Add(new ERPInvoiceItem()
                     {
-                        item_code = concepto.IdProducto,
+                        item_code = concepto.IdProducto.TrimStart('0'),
                         qty = (int)concepto.Cantidad,
                         rate = concepto.PrecioUnitario
                     }); ;
