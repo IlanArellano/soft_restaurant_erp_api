@@ -34,7 +34,7 @@
 
         private void LogResponse(HttpContext context, string responseBody)
         {
-            _logger.LogInformation($"Response: {context.Response.StatusCode}, Body: {responseBody}");
+            _logger.LogInformation($"Response: {context.Response.StatusCode} ${Environment.NewLine} Body: {responseBody}");
         }
     }
 }

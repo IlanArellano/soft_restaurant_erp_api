@@ -38,7 +38,7 @@ namespace soft_restaurant_erp_api.Middlewares
 
         private void LogRequest(HttpContext context, string requestBody)
         {
-            _logger.LogInformation($"Request {context.Request.Method} {context.Request.Path}: {requestBody}");
+            _logger.LogInformation($"Request {context.Request.Method} {Environment.NewLine} Date: {DateTime.Now.ToString()} {Environment.NewLine} {context.Request.Path}: {requestBody}");
         }
     }
 }
