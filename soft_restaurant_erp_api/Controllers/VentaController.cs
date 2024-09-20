@@ -26,7 +26,12 @@ namespace soft_restaurant_erp_api.Controllers
             if (Request.Headers.TryGetValue("Authorization", out var authorizationHeader))
                 token = authorizationHeader!;
             else throw new Exception("No Token has provided");
-            var response = await logic.ProcessVenta(body, $"{baseApiUrl}/api/resource/Sales Invoice", token);
+            HTTPProps ERPprops = new HTTPProps()
+            {
+                baseURL = this.baseApiUrl,
+            };
+            ERPprops.headers.Add("Authorization", authorizationHeader!);  
+            var response = await logic.ProcessVenta(body, ERPprops);
                
             var result = await response.Content.ReadAsStringAsync();
             Response.StatusCode = (int)response.StatusCode;

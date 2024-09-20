@@ -2,6 +2,9 @@
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Text.Json;
 using System.Text;
+using Entities.Responses;
+using ADO.Extensions;
+using System.Net;
 
 namespace ADO.Logic
 {
@@ -9,6 +12,51 @@ namespace ADO.Logic
     {
         private static readonly string DEFAULT_SALES_COMPANY = "ALIANZANACIONALMULTIMARCA";
         private static readonly string DEFAULT_SALES_CUSTOMER = "VentasM9";
+
+        private static List<string> StoredAvailableItemCodes = [];
+
+        private async static Task processItem(VentaBody body, HTTPProps ERPprops)
+        {
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.setHeadersFromDictionary(ERPprops.headers);
+
+                foreach(var venta in body.Ventas)
+                {
+                    foreach (var item in venta.Conceptos)
+                    {
+                        string item_code = item.IdProducto.TrimStart('0');
+                        bool isExistsInMemory = StoredAvailableItemCodes.Any(item => item.Equals(item_code));
+                        if (isExistsInMemory) continue;
+                        HttpResponseMessage getResponse = await httpClient.GetAsync($"{ERPprops.baseURL}/api/resource/Item/{item_code}");
+                        if (getResponse.StatusCode == HttpStatusCode.Unauthorized || getResponse.StatusCode == HttpStatusCode.Forbidden) throw new Exception("El token de acceso al ERP No es válido");
+                        
+                        if (getResponse.IsSuccessStatusCode)
+                        {
+                            StoredAvailableItemCodes.Add(item_code);
+                            continue;
+                        }
+
+                        ERPCreateItem data = new()
+                        {
+                            item_code = item_code,
+                            description = item.Descripcion,
+                            item_group = "NuevosItems",
+                            item_name = item.Descripcion,
+                            stock_uom = "Unidad(es)"
+                        };
+                        var jsonData = JsonSerializer.Serialize(data);
+                        var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+                        HttpResponseMessage createResponse = await httpClient.PostAsync($"{ERPprops.baseURL}/api/resource/Item", content);
+                        if (createResponse.IsSuccessStatusCode)
+                            StoredAvailableItemCodes.Add(item_code);
+                        else
+                        Console.WriteLine($"Ha ocurrido un error al añadir el item ${item_code}${Environment.NewLine}${await createResponse.Content.ReadAsStringAsync()}");
+                    }
+                }
+            }
+        }
+
         private static ERPInvoice ToERPInvoice(VentaBody body)
         {
             string[] dateInfo = body.Ventas.Count > 0 ? body.Ventas[0].FechaVenta.Split('T', StringSplitOptions.TrimEntries) : ["2024-08-31", "13:00:49.276331"];
@@ -59,19 +107,17 @@ namespace ADO.Logic
             return data;
         }
         
-        public async Task<HttpResponseMessage> ProcessVenta(VentaBody body, string apiUrl, string apiToken)
+        public async Task<HttpResponseMessage> ProcessVenta(VentaBody body, HTTPProps ERPprops)
         {
-            // Crear una instancia de HttpClient
             using (var httpClient = new HttpClient())
             {
-                httpClient.DefaultRequestHeaders.Add("Authorization", apiToken);
-
+                httpClient.setHeadersFromDictionary(ERPprops.headers);
                 ERPInvoice data = ToERPInvoice(body);
-
+                await processItem(body, ERPprops);
                 var jsonData = JsonSerializer.Serialize(data);
                 var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
 
-                HttpResponseMessage response = await httpClient.PostAsync(apiUrl, content);
+                HttpResponseMessage response = await httpClient.PostAsync($"{ERPprops.baseURL}/api/resource/Sales Invoice", content);
                 
                 return response;
             }
