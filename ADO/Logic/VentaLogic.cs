@@ -43,7 +43,8 @@ namespace ADO.Logic
                             description = item.Descripcion,
                             item_group = "NuevosItems",
                             item_name = item.Descripcion,
-                            stock_uom = "Unidad(es)"
+                            stock_uom = "Unidad(es)",
+                            valuation_rate = "0.01"
                         };
                         var jsonData = JsonSerializer.Serialize(data);
                         var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
