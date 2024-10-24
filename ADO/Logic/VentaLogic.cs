@@ -14,6 +14,7 @@ namespace ADO.Logic
         private static readonly string DEFAULT_SALES_CUSTOMER = "VentasM9";
 
         private static List<string> StoredAvailableItemCodes = [];
+        private static List<string> StoredOrderNumbers = [];
 
         private async static Task processItem(VentaBody body, HTTPProps ERPprops)
         {
@@ -21,7 +22,7 @@ namespace ADO.Logic
             {
                 httpClient.setHeadersFromDictionary(ERPprops.headers);
 
-                foreach(var venta in body.Ventas)
+                foreach (var venta in body.Ventas)
                 {
                     foreach (var item in venta.Conceptos)
                     {
@@ -30,7 +31,7 @@ namespace ADO.Logic
                         if (isExistsInMemory) continue;
                         HttpResponseMessage getResponse = await httpClient.GetAsync($"{ERPprops.baseURL}/api/resource/Item/{item_code}");
                         if (getResponse.StatusCode == HttpStatusCode.Unauthorized || getResponse.StatusCode == HttpStatusCode.Forbidden) throw new Exception("El token de acceso al ERP No es válido");
-                        
+
                         if (getResponse.IsSuccessStatusCode)
                         {
                             StoredAvailableItemCodes.Add(item_code);
@@ -52,13 +53,13 @@ namespace ADO.Logic
                         if (createResponse.IsSuccessStatusCode)
                             StoredAvailableItemCodes.Add(item_code);
                         else
-                        Console.WriteLine($"Ha ocurrido un error al añadir el item ${item_code}${Environment.NewLine}${await createResponse.Content.ReadAsStringAsync()}");
+                            Console.WriteLine($"Ha ocurrido un error al añadir el item ${item_code}${Environment.NewLine}${await createResponse.Content.ReadAsStringAsync()}");
                     }
                 }
             }
         }
 
-        private static ERPInvoice ToERPInvoice(VentaBody body)
+        private static bool GenerateERPInvoice(VentaBody body, out ERPInvoice? invoice)
         {
             string[] dateInfo = body.Ventas.Count > 0 ? body.Ventas[0].FechaVenta.Split('T', StringSplitOptions.TrimEntries) : ["2024-08-31", "13:00:49.276331"];
             ERPInvoice data = new()
@@ -74,9 +75,15 @@ namespace ADO.Logic
                 update_stock = 1
             };
 
-            foreach(Venta venta in body.Ventas)
+            foreach (Venta venta in body.Ventas)
             {
-                foreach(Concepto concepto in venta.Conceptos)
+                //Si tan solo una venta tiene un número de orden que ya se procesó se va a descartar esta petición
+                if (StoredOrderNumbers.Any(x => x.Equals(venta.NumeroOrden)))
+                {
+                    invoice = null;
+                    return false;
+                }
+                foreach (Concepto concepto in venta.Conceptos)
                 {
                     data.items.Add(new ERPInvoiceItem()
                     {
@@ -102,24 +109,34 @@ namespace ADO.Logic
                         parenttype = "Sales Invoice"
                     });
                 }
-               
+
             }
 
-            return data;
+            invoice = data;
+            return true;
         }
-        
+
         public async Task<HttpResponseMessage> ProcessVenta(VentaBody body, HTTPProps ERPprops)
         {
             using (var httpClient = new HttpClient())
             {
                 httpClient.setHeadersFromDictionary(ERPprops.headers);
-                ERPInvoice data = ToERPInvoice(body);
+                bool canGenerateInvoice = GenerateERPInvoice(body, out ERPInvoice? data);
+                if (!canGenerateInvoice)
+                {
+                    return new HttpResponseMessage(HttpStatusCode.NoContent);
+                }
                 await processItem(body, ERPprops);
                 var jsonData = JsonSerializer.Serialize(data);
                 var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
 
                 HttpResponseMessage response = await httpClient.PostAsync($"{ERPprops.baseURL}/api/resource/Sales Invoice", content);
-                
+
+                if (response.IsSuccessStatusCode)
+                {
+                    StoredAvailableItemCodes.AddRange(body.Ventas.Select(item => item.NumeroOrden));
+                }
+
                 return response;
             }
         }
