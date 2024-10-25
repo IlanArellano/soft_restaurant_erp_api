@@ -2,6 +2,7 @@
 using Entities;
 using Entities.Responses;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace soft_restaurant_erp_api.Controllers
 {
@@ -11,12 +12,14 @@ namespace soft_restaurant_erp_api.Controllers
     {
 
         private readonly VentaLogic logic;
+        private readonly ERPInternalContext context;
         private readonly string baseApiUrl;
 
-        public VentaController(VentaLogic _logic, IConfiguration configuration)
+        public VentaController(VentaLogic _logic, IConfiguration configuration, ERPInternalContext context)
         {
             this.logic = _logic;
             this.baseApiUrl = configuration["ExternalApiSettings:ERP_URL"]!;
+            this.context = context;
         }
 
         [HttpPost]
@@ -30,23 +33,27 @@ namespace soft_restaurant_erp_api.Controllers
             {
                 baseURL = this.baseApiUrl,
             };
-            ERPprops.headers.Add("Authorization", authorizationHeader!);  
-            var response = await logic.ProcessVenta(body, ERPprops);
-               
+            ERPprops.headers.Add("Authorization", authorizationHeader!);
+            var StoredOrderNumbers = context.OrderNumbers.Select(x => x.Value).ToList();
+            var response = await logic.ProcessVenta(body, ERPprops, StoredOrderNumbers);
+
             var result = await response.Content.ReadAsStringAsync();
             Response.StatusCode = (int)response.StatusCode;
-                return new()
+            if (Response.StatusCode == 200 && result != null)
+            {
+                context.OrderNumbers.AddRange(body.Ventas.Select(x => new IdRecord()
                 {
-                    success = response.IsSuccessStatusCode,
-                    response = response.IsSuccessStatusCode ? result : null,
-                    error = !response.IsSuccessStatusCode ? result : null
-                };
+                    Value = x.NumeroOrden
+                }));
+                context.SaveChanges();
+            }
+            return new()
+            {
+                success = response.IsSuccessStatusCode,
+                response = response.IsSuccessStatusCode ? result : null,
+                error = !response.IsSuccessStatusCode ? result : null
+            };
         }
 
-        [HttpGet]
-        public async Task<bool> Test()
-        {
-            return true;
-        }
     }
 }

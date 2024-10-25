@@ -1,5 +1,4 @@
 ﻿using Entities;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Text.Json;
 using System.Text;
 using Entities.Responses;
@@ -14,7 +13,6 @@ namespace ADO.Logic
         private static readonly string DEFAULT_SALES_CUSTOMER = "VentasM9";
 
         private static List<string> StoredAvailableItemCodes = [];
-        private static List<string> StoredOrderNumbers = [];
 
         private async static Task processItem(VentaBody body, HTTPProps ERPprops)
         {
@@ -59,7 +57,7 @@ namespace ADO.Logic
             }
         }
 
-        private static bool GenerateERPInvoice(VentaBody body, out ERPInvoice? invoice)
+        private static bool GenerateERPInvoice(VentaBody body, List<string> StoredOrderNumbers, out ERPInvoice? invoice)
         {
             string[] dateInfo = body.Ventas.Count > 0 ? body.Ventas[0].FechaVenta.Split('T', StringSplitOptions.TrimEntries) : ["2024-08-31", "13:00:49.276331"];
             ERPInvoice data = new()
@@ -116,12 +114,12 @@ namespace ADO.Logic
             return true;
         }
 
-        public async Task<HttpResponseMessage> ProcessVenta(VentaBody body, HTTPProps ERPprops)
+        public async Task<HttpResponseMessage> ProcessVenta(VentaBody body, HTTPProps ERPprops, List<string> StoredOrderNumbers)
         {
             using (var httpClient = new HttpClient())
             {
                 httpClient.setHeadersFromDictionary(ERPprops.headers);
-                bool canGenerateInvoice = GenerateERPInvoice(body, out ERPInvoice? data);
+                bool canGenerateInvoice = GenerateERPInvoice(body, StoredOrderNumbers, out ERPInvoice? data);
                 if (!canGenerateInvoice)
                 {
                     return new HttpResponseMessage(HttpStatusCode.OK);
@@ -131,12 +129,6 @@ namespace ADO.Logic
                 var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
 
                 HttpResponseMessage response = await httpClient.PostAsync($"{ERPprops.baseURL}/api/resource/Sales Invoice", content);
-
-
-                if (response.IsSuccessStatusCode)
-                {
-                    StoredOrderNumbers.AddRange(body.Ventas.Select(item => item.NumeroOrden));
-                }
 
                 return response;
             }

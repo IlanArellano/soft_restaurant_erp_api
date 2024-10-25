@@ -25,6 +25,15 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 
+builder.Services.AddScoped(x =>
+{
+    var folder = Environment.SpecialFolder.LocalApplicationData;
+    var path = Environment.GetFolderPath(folder);
+    string DbPath = Path.Join(path, "erp_internal.db");
+    var context = new ERPInternalContext(builder.Configuration.GetConnectionString($"Data Source={DbPath}")!);
+    context.Database.EnsureCreated();
+    return context;
+});
 builder.Services.SetDependencies(builder.Configuration);
 
 builder.Services.AddSingleton<ResponseMiddleware>();
