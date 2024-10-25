@@ -124,7 +124,7 @@ namespace ADO.Logic
                 bool canGenerateInvoice = GenerateERPInvoice(body, out ERPInvoice? data);
                 if (!canGenerateInvoice)
                 {
-                    return new HttpResponseMessage(HttpStatusCode.NoContent);
+                    return new HttpResponseMessage(HttpStatusCode.OK);
                 }
                 await processItem(body, ERPprops);
                 var jsonData = JsonSerializer.Serialize(data);
@@ -132,9 +132,10 @@ namespace ADO.Logic
 
                 HttpResponseMessage response = await httpClient.PostAsync($"{ERPprops.baseURL}/api/resource/Sales Invoice", content);
 
+
                 if (response.IsSuccessStatusCode)
                 {
-                    StoredAvailableItemCodes.AddRange(body.Ventas.Select(item => item.NumeroOrden));
+                    StoredOrderNumbers.AddRange(body.Ventas.Select(item => item.NumeroOrden));
                 }
 
                 return response;
