@@ -3,6 +3,7 @@ using Entities;
 using Entities.Responses;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace soft_restaurant_erp_api.Controllers
 {
@@ -39,7 +40,7 @@ namespace soft_restaurant_erp_api.Controllers
 
             var result = await response.Content.ReadAsStringAsync();
             Response.StatusCode = (int)response.StatusCode;
-            if (Response.StatusCode == 200 && result != null)
+            if (Response.StatusCode == 200 && !result.IsNullOrEmpty())
             {
                 context.OrderNumbers.AddRange(body.Ventas.Select(x => new IdRecord()
                 {

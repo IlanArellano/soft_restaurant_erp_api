@@ -30,7 +30,7 @@ builder.Services.AddScoped(x =>
     var folder = Environment.SpecialFolder.LocalApplicationData;
     var path = Environment.GetFolderPath(folder);
     string DbPath = Path.Join(path, "erp_internal.db");
-    var context = new ERPInternalContext(builder.Configuration.GetConnectionString($"Data Source={DbPath}")!);
+    var context = new ERPInternalContext($"Data Source={DbPath}");
     context.Database.EnsureCreated();
     return context;
 });
