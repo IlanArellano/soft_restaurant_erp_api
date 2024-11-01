@@ -9,7 +9,7 @@ namespace ADO.Logic
 {
     public class VentaLogic
     {
-        private static readonly string DEFAULT_SALES_COMPANY = "ALIANZANACIONALMULTIMARCA";
+        private static readonly string DEFAULT_SALES_COMPANY = "Mictlan9";
         private static readonly string DEFAULT_SALES_CUSTOMER = "VentasM9";
 
         private static List<string> StoredAvailableItemCodes = [];
